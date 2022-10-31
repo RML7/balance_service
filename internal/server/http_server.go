@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"github.com/avito-test/internal/config/logger"
 	"github.com/avito-test/internal/dto"
@@ -63,7 +64,7 @@ func (s *httpServer) HandleIncreaseBalance(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	valid, errorMessage := isValidRequestBody(s.validator, request)
+	valid, errorMessage := isValidRequest(s.validator, request)
 
 	if !valid {
 		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: errorMessage})
@@ -132,7 +133,7 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	valid, errorMessage := isValidRequestBody(s.validator, request)
+	valid, errorMessage := isValidRequest(s.validator, request)
 
 	if !valid {
 		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: errorMessage})
@@ -141,8 +142,8 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 
 	transaction := model.Transaction{
 		UserId:            *request.UserId,
-		OrderId:           *request.OrderId,
-		ServiceId:         *request.ServiceId,
+		OrderId:           request.OrderId,
+		ServiceId:         request.ServiceId,
 		Sum:               *request.Sum,
 		TransactionTypeId: *request.TransactionTypeId,
 		Comment:           request.Comment,
@@ -155,7 +156,94 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func isValidRequestBody(v *validator.Validate, requestBody interface{}) (bool, string) {
+func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
+	var requestDto dto.GetTransactionsRequest
+
+	queryParams := r.URL.Query()
+
+	if userIds, ok := queryParams["userId"]; ok {
+		requestDto.UserId = &userIds[0]
+	}
+
+	if pages, ok := queryParams["page"]; ok {
+		if i, err := strconv.Atoi(pages[0]); err != nil {
+			sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "parameter page should be integer"})
+			return
+		} else {
+			requestDto.Page = &i
+		}
+	}
+
+	if itemsPerPageArr, ok := queryParams["itemsPerPage"]; ok {
+		if i, err := strconv.Atoi(itemsPerPageArr[0]); err != nil {
+			sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "parameter itemsPerPage should be integer"})
+			return
+		} else {
+			requestDto.ItemsPerPage = &i
+		}
+	}
+
+	if sortByArr, ok := queryParams["sortBy"]; ok {
+		requestDto.SortBy = &sortByArr[0]
+	}
+
+	if sortTypeArr, ok := queryParams["sortType"]; ok {
+		requestDto.SortType = &sortTypeArr[0]
+	}
+
+	valid, errorMessage := isValidRequest(s.validator, requestDto)
+
+	if !valid {
+		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: errorMessage})
+		return
+	}
+
+	var request model.GetTransactionsRequest
+
+	if requestDto.ItemsPerPage == nil {
+		request.Limit = 10
+	} else {
+		request.Limit = *requestDto.ItemsPerPage
+	}
+
+	request.UserId = *requestDto.UserId
+	request.Offset = (*requestDto.Page - 1) * request.Limit
+
+	if requestDto.SortBy == nil {
+		request.SortBy = "date"
+	} else {
+		request.SortBy = *requestDto.SortBy
+	}
+
+	if requestDto.SortType == nil {
+		request.SortType = "desc"
+	} else {
+		request.SortType = *requestDto.SortType
+	}
+
+	if transactions, err := s.transactionService.GetTransactions(r.Context(), request); err != nil {
+		sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
+	} else {
+		var response dto.GetTransactionsResponse
+
+		response.Transactions = make([]dto.Transaction, 0)
+
+		for _, tr := range transactions {
+			response.Transactions = append(response.Transactions, dto.Transaction{
+				OrderId:         tr.OrderId,
+				ServiceId:       tr.ServiceId,
+				TransactionType: tr.TransactionType,
+				Sum:             tr.Sum,
+				Comment:         tr.Comment,
+				UpdTime:         tr.UpdTime,
+			})
+		}
+
+		sendJsonResponse(w, http.StatusOK, response)
+	}
+}
+
+func isValidRequest(v *validator.Validate, requestBody interface{}) (bool, string) {
 	valid := true
 	var errorMessage string
 
@@ -175,6 +263,13 @@ func isValidRequestBody(v *validator.Validate, requestBody interface{}) (bool, s
 				errorMessage = fmt.Sprintf("field %s should be uuid", err.Field())
 			case "oneof":
 				errorMessage = fmt.Sprintf("field %s should be in [%s]", err.Field(), err.Param())
+			case "min":
+				switch err.Type().Kind() {
+				case reflect.Int:
+					errorMessage = fmt.Sprintf("field %s should be >= %s", err.Field(), err.Param())
+				default:
+					errorMessage = "internal server error"
+				}
 			default:
 				errorMessage = "internal server error"
 			}

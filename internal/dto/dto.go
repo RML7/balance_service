@@ -1,5 +1,9 @@
 package dto
 
+import (
+	"time"
+)
+
 type ApiError struct {
 	Message string `json:"message"`
 } //@name ApiError
@@ -26,3 +30,26 @@ type SaveTransactionRequest struct {
 type SaveTransactionResponse struct {
 	Status int `json:"status" example:"1"`
 } //@name SaveTransactionResponse
+
+type GetTransactionsRequest struct {
+	UserId       *string `validate:"required,uuid"`
+	Page         *int    `validate:"required,min=1"`
+	ItemsPerPage *int    `validate:"omitempty,min=1"`
+	SortBy       *string `validate:"omitempty,oneof=sum date"`
+	SortType     *string `validate:"omitempty,oneof=asc desc"`
+}
+
+type GetTransactionsResponse struct {
+	Transactions []Transaction `json:"transactions"`
+}
+
+type Transaction struct {
+	UserId            *string   `json:"user_id,omitempty"`
+	OrderId           *string   `json:"order_id,omitempty"`
+	ServiceId         *string   `json:"service_id,omitempty"`
+	Sum               float64   `json:"sum"`
+	TransactionTypeId *int      `json:"transaction_type_id,omitempty"`
+	TransactionType   string    `json:"transaction_type"`
+	Comment           *string   `json:"comment,omitempty"`
+	UpdTime           time.Time `json:"date"`
+}

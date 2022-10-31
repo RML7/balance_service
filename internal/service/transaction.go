@@ -23,7 +23,7 @@ func NewTransactionService(repo repo.TransactionRepo) *TransactionService {
 }
 
 func (t *TransactionService) SaveTransaction(ctx context.Context, transaction model.Transaction) (int, error) {
-	status, err := t.repo.SaveTransaction(transaction.OrderId, transaction.UserId, transaction.ServiceId, transaction.Sum, transaction.TransactionTypeId, transaction.Comment)
+	status, err := t.repo.SaveTransaction(*transaction.OrderId, transaction.UserId, *transaction.ServiceId, transaction.Sum, transaction.TransactionTypeId, transaction.Comment)
 
 	if err != nil {
 		t.log.WithFields(logrus.Fields{
@@ -34,4 +34,18 @@ func (t *TransactionService) SaveTransaction(ctx context.Context, transaction mo
 	}
 
 	return status, nil
+}
+
+func (t *TransactionService) GetTransactions(ctx context.Context, request model.GetTransactionsRequest) ([]model.Transaction, error) {
+	transactions, err := t.repo.GetTransactionListByUserId(request.UserId, request.Offset, request.Limit, request.SortBy, request.SortType)
+
+	if err != nil {
+		t.log.WithFields(logrus.Fields{
+			"error_message": err.Error(),
+		}).Error(fmt.Sprintf("ERROR_%s", ctx.Value("requestId")))
+
+		return nil, err
+	}
+
+	return transactions, nil
 }

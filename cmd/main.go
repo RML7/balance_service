@@ -25,6 +25,7 @@ func main() {
 	router.HandleFunc("/balance/{userId}", httpServer.HandleGetBalance).Methods(http.MethodGet)
 	router.HandleFunc("/balance", httpServer.HandleIncreaseBalance).Methods(http.MethodPost)
 
+	router.HandleFunc("/transaction", httpServer.HandleGetTransactions).Methods(http.MethodGet)
 	router.HandleFunc("/transaction", httpServer.HandleTransaction).Methods(http.MethodPost)
 
 	router.PathPrefix("/swagger").Handler(swagger.WrapHandler).Methods(http.MethodGet)
