@@ -12,4 +12,5 @@ type Transaction struct {
 	ServiceId         string
 	Sum               float64
 	TransactionTypeId int
+	Comment           *string
 }

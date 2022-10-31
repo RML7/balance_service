@@ -23,7 +23,7 @@ func NewTransactionService(repo repo.TransactionRepo) *TransactionService {
 }
 
 func (t *TransactionService) SaveTransaction(ctx context.Context, transaction model.Transaction) (int, error) {
-	status, err := t.repo.SaveTransaction(transaction)
+	status, err := t.repo.SaveTransaction(transaction.OrderId, transaction.UserId, transaction.ServiceId, transaction.Sum, transaction.TransactionTypeId, transaction.Comment)
 
 	if err != nil {
 		t.log.WithFields(logrus.Fields{

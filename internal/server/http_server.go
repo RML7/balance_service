@@ -121,7 +121,7 @@ func (s *httpServer) HandleGetBalance(w http.ResponseWriter, r *http.Request) {
 // @description Метод для обработки транзакции. Для резервации денег со счета в теле запроса поле "transactionType" = 1. Для признания выручки и подтверждения списания средств с баланса "transactionType" = 2. В случае отмены резервации и возврата средств на основной баланс "transactionType" = 3.
 // @accept json
 // @produce json
-// @param SaveTransactionRequest body dto.SaveTransactionRequest true "orderId - id заказа (UUID).<br> serviceId - id услуги (UUID).<br> userId - id пользователя (UUID).<br> sum - сумма транзакции (больше 0).<br> transactionType - тип транзакции (enum(1, 2, 3))."
+// @param SaveTransactionRequest body dto.SaveTransactionRequest true "orderId - id заказа (UUID).<br> serviceId - id услуги (UUID).<br> userId - id пользователя (UUID).<br> sum - сумма транзакции (больше 0).<br> transactionType - тип транзакции (enum(1, 2, 3)).<br> comment - комментарий (опционально)"
 // @success 200 {object} dto.SaveTransactionResponse "Воможные статусы:<br> 1 - добавление/обновление произошло успешно.<br> 2 - попытка резервации ("transactionType" = 1), резервация с соответсвующими orderId, userId, serviceId уже существует, транзакция резервации не добавлена.<br> 3 - попытка резервации ("transactionType" = 1), на балансе недостаточно средств, транзакция резервации не добавлена.<br> 4 - попытка признания выручки ("transactionType" = 2), транзакция с соответсвующими orderId, userId, serviceId не найдена, ошибка.<br> 5 - попытка признания выручки ("transactionType" = 2), транзакция с соответсвующими orderId, userId, serviceId найдена и выручка уже списана ранее, ошибка.<br> 6 - попытка признания выручки ("transactionType" = 2), транзакция с соответсвующими orderId, userId, serviceId найдена и уже была отклонена ранее, ошибка.<br> 7 - попытка отмены резервации ("transactionType" = 3), транзакция с соответсвующими orderId, userId, serviceId не найдена, ошибка.<br> 8 - попытка отмены резервации ("transactionType" = 3), транзакция с соответсвующими orderId, userId, serviceId найдена и уже была отменена ранее, деньги были возвращены, ошибка.<br> 9 - попытка отмены резервации ("transactionType" = 3), транзакция с соответсвующими orderId, userId, serviceId найдена и уже была подтверждена ранее, деньги были списаны, ошибка.<br> 10 - баланс пользователя не найден, ошибка"
 // @router /transaction [post]
 func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
@@ -145,6 +145,7 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 		ServiceId:         *request.ServiceId,
 		Sum:               *request.Sum,
 		TransactionTypeId: *request.TransactionTypeId,
+		Comment:           request.Comment,
 	}
 
 	if status, err := s.transactionService.SaveTransaction(r.Context(), transaction); err != nil {
@@ -174,13 +175,6 @@ func isValidRequestBody(v *validator.Validate, requestBody interface{}) (bool, s
 				errorMessage = fmt.Sprintf("field %s should be uuid", err.Field())
 			case "oneof":
 				errorMessage = fmt.Sprintf("field %s should be in [%s]", err.Field(), err.Param())
-			case "min":
-				switch err.Type().Kind() {
-				case reflect.String:
-					errorMessage = fmt.Sprintf("legth of field %s should be >= %s", err.Field(), err.Param())
-				default:
-					errorMessage = "internal server error"
-				}
 			default:
 				errorMessage = "internal server error"
 			}
