@@ -268,7 +268,7 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 		sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
 	} else {
 		sendJsonResponse(w, http.StatusOK, dto.CreateReportResponse{
-			URL: fmt.Sprintf("%s/%s", "http://localhost:8000/report", r.Context().Value("requestId")),
+			URL: fmt.Sprintf("%s/%s.csv", "http://localhost:8000/report", r.Context().Value("requestId")),
 		})
 	}
 }
