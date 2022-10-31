@@ -1,0 +1,181 @@
+definitions:
+  ApiError:
+    properties:
+      message:
+        type: string
+    type: object
+  GetBalanceResponse:
+    properties:
+      balance:
+        example: 53.68
+        format: numeric
+        type: number
+    type: object
+  IncreaseBalanceRequest:
+    properties:
+      comment:
+        example: Зачисление денежных средств на баланс
+        format: string
+        minLength: 1
+        type: string
+      sum:
+        example: 53.68
+        format: numeric
+        type: number
+      userId:
+        example: c806ce22-7ea3-4402-b979-9959746bb956
+        format: uuid
+        type: string
+    required:
+    - sum
+    - userId
+    type: object
+  SaveTransactionRequest:
+    properties:
+      orderId:
+        example: 6c87959d-aa88-4f51-932b-ff70563ad87a
+        format: uuid
+        type: string
+      serviceId:
+        example: 15aa9f91-c8f7-40e4-9108-d45891c10444
+        format: uuid
+        type: string
+      sum:
+        example: 345
+        format: numeric
+        type: number
+      transactionType:
+        enum:
+        - 1
+        - 2
+        - 3
+        example: 1
+        format: integer
+        type: integer
+      userId:
+        example: e8c49cf0-d984-4ed8-a37c-2d60f74c7fe5
+        format: uuid
+        type: string
+    required:
+    - orderId
+    - serviceId
+    - sum
+    - transactionType
+    - userId
+    type: object
+  SaveTransactionResponse:
+    properties:
+      status:
+        example: 1
+        type: integer
+    type: object
+host: localhost:8000
+info:
+  contact: {}
+  title: Balance Service
+  version: "2.0"
+paths:
+  /balance:
+    post:
+      consumes:
+      - application/json
+      description: Метод для увеличения баланса
+      parameters:
+      - description: userId - id пользователя (UUID)<br>sum - сумма пополнения (больше
+          0)<br> comment - комментарий (опционально)
+        in: body
+        name: IncreaseBalanceRequest
+        required: true
+        schema:
+          $ref: '#/definitions/IncreaseBalanceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: В случае успешного добавления денег к балансу возвращается
+            статус 200
+        "400":
+          description: В случае если запрос не валидный возвращается статус 400 и
+            тело ответа
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: увеличение баланса
+      tags:
+      - balance
+  /balance/{userId}:
+    get:
+      consumes:
+      - application/json
+      description: Метод для получения баланса по userId
+      parameters:
+      - description: id пользователя
+        example: b2b9a788-55fb-11ed-bdc3-0242ac120002
+        format: uuid
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: В случае если баланс найден
+          schema:
+            $ref: '#/definitions/GetBalanceResponse'
+        "400":
+          description: В случае если невалидный userId
+          schema:
+            $ref: '#/definitions/ApiError'
+        "404":
+          description: В случае если баланс не найден по userId
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: получение баланса по userId
+      tags:
+      - balance
+  /transaction:
+    post:
+      consumes:
+      - application/json
+      description: Метод для обработки транзакции. Для резервации денег со счета в
+        теле запроса поле "transactionType" = 1. Для признания выручки и подтверждения
+        списания средств с баланса "transactionType" = 2. В случае отмены резервации
+        и возврата средств на основной баланс "transactionType" = 3.
+      parameters:
+      - description: orderId - id заказа (UUID).<br> serviceId - id услуги (UUID).<br>
+          userId - id пользователя (UUID).<br> sum - сумма транзакции (больше 0).<br>
+          transactionType - тип транзакции (enum(1, 2, 3)).
+        in: body
+        name: SaveTransactionRequest
+        required: true
+        schema:
+          $ref: '#/definitions/SaveTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Воможные статусы:<br> 1 - добавление/обновление произошло успешно.<br>
+            2 - попытка резервации ("transactionType" = 1), резервация с соответсвующими
+            orderId, userId, serviceId уже существует, транзакция резервации не добавлена.<br>
+            3 - попытка резервации ("transactionType" = 1), на балансе недостаточно
+            средств, транзакция резервации не добавлена.<br> 4 - попытка признания
+            выручки ("transactionType" = 2), транзакция с соответсвующими orderId,
+            userId, serviceId не найдена, ошибка.<br> 5 - попытка признания выручки
+            ("transactionType" = 2), транзакция с соответсвующими orderId, userId,
+            serviceId найдена и выручка уже списана ранее, ошибка.<br> 6 - попытка
+            признания выручки ("transactionType" = 2), транзакция с соответсвующими
+            orderId, userId, serviceId найдена и уже была отклонена ранее, ошибка.<br>
+            7 - попытка отмены резервации ("transactionType" = 3), транзакция с соответсвующими
+            orderId, userId, serviceId не найдена, ошибка.<br> 8 - попытка отмены
+            резервации ("transactionType" = 3), транзакция с соответсвующими orderId,
+            userId, serviceId найдена и уже была отменена ранее, деньги были возвращены,
+            ошибка.<br> 9 - попытка отмены резервации ("transactionType" = 3), транзакция
+            с соответсвующими orderId, userId, serviceId найдена и уже была подтверждена
+            ранее, деньги были списаны, ошибка.<br> 10 - баланс пользователя не найден,
+            ошибка
+          schema:
+            $ref: '#/definitions/SaveTransactionResponse'
+      summary: Метод для обработки транзакции
+      tags:
+      - transaction
+swagger: "2.0"
