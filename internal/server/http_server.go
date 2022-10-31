@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/avito-test/internal/config/logger"
 	"github.com/avito-test/internal/dto"
@@ -25,6 +26,7 @@ type httpServer struct {
 	log                *logrus.Logger
 	balanceService     *service.BalanceService
 	transactionService *service.TransactionService
+	reportService      *service.ReportService
 }
 
 func NewHttpServer() *httpServer {
@@ -37,12 +39,14 @@ func NewHttpServer() *httpServer {
 
 	balanceRepo := repo.NewBalanceRepo(dbClient)
 	transactionRepo := repo.NewTransactionRepo(dbClient)
+	reportRepo := repo.NewReportRepo(dbClient)
 
 	return &httpServer{
 		validator:          validator.New(),
 		log:                log,
 		balanceService:     service.NewBalanceService(balanceRepo),
 		transactionService: service.NewTransactionService(transactionRepo),
+		reportService:      service.NewReportService(reportRepo),
 	}
 }
 
@@ -243,6 +247,32 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) {
+	var request dto.CreateReportRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "invalid request body"})
+		return
+	}
+
+	valid, errorMessage := isValidRequest(s.validator, request)
+
+	if !valid {
+		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: errorMessage})
+		return
+	}
+
+	t := time.Date(*request.Year, time.Month(*request.Month), 0, 0, 0, 0, 0, time.UTC)
+
+	if err := s.reportService.CreateReport(r.Context(), t); err != nil {
+		sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
+	} else {
+		sendJsonResponse(w, http.StatusOK, dto.CreateReportResponse{
+			URL: fmt.Sprintf("%s/%s", "http://localhost:8000/report", r.Context().Value("requestId")),
+		})
+	}
+}
+
 func isValidRequest(v *validator.Validate, requestBody interface{}) (bool, string) {
 	valid := true
 	var errorMessage string
@@ -267,6 +297,13 @@ func isValidRequest(v *validator.Validate, requestBody interface{}) (bool, strin
 				switch err.Type().Kind() {
 				case reflect.Int:
 					errorMessage = fmt.Sprintf("field %s should be >= %s", err.Field(), err.Param())
+				default:
+					errorMessage = "internal server error"
+				}
+			case "max":
+				switch err.Type().Kind() {
+				case reflect.Int:
+					errorMessage = fmt.Sprintf("field %s should be <= %s", err.Field(), err.Param())
 				default:
 					errorMessage = "internal server error"
 				}

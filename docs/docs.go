@@ -114,7 +114,7 @@ const docTemplate = `{
                 "summary": "Метод для обработки транзакции",
                 "parameters": [
                     {
-                        "description": "orderId - id заказа (UUID).\u003cbr\u003e serviceId - id услуги (UUID).\u003cbr\u003e userId - id пользователя (UUID).\u003cbr\u003e sum - сумма транзакции (больше 0).\u003cbr\u003e transactionType - тип транзакции (enum(1, 2, 3)).",
+                        "description": "orderId - id заказа (UUID).\u003cbr\u003e serviceId - id услуги (UUID).\u003cbr\u003e userId - id пользователя (UUID).\u003cbr\u003e sum - сумма транзакции (больше 0).\u003cbr\u003e transactionType - тип транзакции (enum(1, 2, 3)).\u003cbr\u003e comment - комментарий (опционально)",
                         "name": "SaveTransactionRequest",
                         "in": "body",
                         "required": true,
@@ -163,7 +163,6 @@ const docTemplate = `{
                 "comment": {
                     "type": "string",
                     "format": "string",
-                    "minLength": 1,
                     "example": "Зачисление денежных средств на баланс"
                 },
                 "sum": {
@@ -188,6 +187,11 @@ const docTemplate = `{
                 "userId"
             ],
             "properties": {
+                "comment": {
+                    "type": "string",
+                    "format": "string",
+                    "example": "Резервация денежных средств"
+                },
                 "orderId": {
                     "type": "string",
                     "format": "uuid",

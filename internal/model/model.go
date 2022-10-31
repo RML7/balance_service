@@ -26,3 +26,8 @@ type GetTransactionsRequest struct {
 	SortBy   string
 	SortType string
 }
+
+type ReportRow struct {
+	ServiceName string
+	TotalSum    float64
+}

@@ -28,6 +28,8 @@ func main() {
 	router.HandleFunc("/transaction", httpServer.HandleGetTransactions).Methods(http.MethodGet)
 	router.HandleFunc("/transaction", httpServer.HandleTransaction).Methods(http.MethodPost)
 
+	router.HandleFunc("/report", httpServer.HandleCreateReport).Methods(http.MethodPost)
+
 	router.PathPrefix("/swagger").Handler(swagger.WrapHandler).Methods(http.MethodGet)
 
 	if err := http.ListenAndServe(":8000", router); err != nil {

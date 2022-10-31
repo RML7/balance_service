@@ -53,3 +53,12 @@ type Transaction struct {
 	Comment           *string   `json:"comment,omitempty"`
 	UpdTime           time.Time `json:"date"`
 }
+
+type CreateReportRequest struct {
+	Year  *int `validate:"required,min=2022,max=2100"`
+	Month *int `validate:"required,oneof=1 2 3 4 5 6 7 8 9 10 11 12"`
+}
+
+type CreateReportResponse struct {
+	URL string `json:"url"`
+}
