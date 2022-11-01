@@ -69,13 +69,13 @@ func (s *httpServer) HandleIncreaseBalance(w http.ResponseWriter, r *http.Reques
 	var request dto.IncreaseBalanceRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "invalid request body"})
+		s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: "invalid request body"})
 		return
 	}
 
-	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
+	if ok, validationMessage, err := s.isValidRequest(r.Context(), s.validator, request); err != nil {
 		if errors.Is(err, s.InternalServerError) {
-			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+			s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
 		} else {
 			s.log.WithFields(logrus.Fields{
 				"error_message": err.Error(),
@@ -85,7 +85,7 @@ func (s *httpServer) HandleIncreaseBalance(w http.ResponseWriter, r *http.Reques
 		return
 	} else {
 		if !ok {
-			s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: validationMessage})
+			s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: validationMessage})
 			return
 		}
 	}
@@ -97,7 +97,7 @@ func (s *httpServer) HandleIncreaseBalance(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := s.balanceService.AddBalance(r.Context(), transaction); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
+		s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
 	}
 }
 
@@ -116,7 +116,7 @@ func (s *httpServer) HandleGetBalance(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	if err := s.validator.Var(params["userId"], "uuid"); err != nil {
-		s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "parameter userId should be uuid"})
+		s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: "parameter userId should be uuid"})
 		return
 	}
 
@@ -124,15 +124,15 @@ func (s *httpServer) HandleGetBalance(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if errors.Is(err, s.balanceService.BalanceNotFoundErr) {
-			s.sendJsonResponse(w, http.StatusNotFound, dto.ApiError{Message: err.Error()})
+			s.sendJsonResponse(r.Context(), w, http.StatusNotFound, dto.ApiError{Message: err.Error()})
 		} else {
-			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
+			s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
 		}
 
 		return
 	}
 
-	s.sendJsonResponse(w, http.StatusOK, dto.GetBalanceResponse{Balance: balance})
+	s.sendJsonResponse(r.Context(), w, http.StatusOK, dto.GetBalanceResponse{Balance: balance})
 }
 
 // HandleTransaction
@@ -148,13 +148,13 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 	var request dto.SaveTransactionRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "invalid request body"})
+		s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: "invalid request body"})
 		return
 	}
 
-	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
+	if ok, validationMessage, err := s.isValidRequest(r.Context(), s.validator, request); err != nil {
 		if errors.Is(err, s.InternalServerError) {
-			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+			s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
 		} else {
 			s.log.WithFields(logrus.Fields{
 				"error_message": err.Error(),
@@ -164,7 +164,7 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		if !ok {
-			s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: validationMessage})
+			s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: validationMessage})
 			return
 		}
 	}
@@ -179,9 +179,9 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if status, err := s.transactionService.SaveTransaction(r.Context(), transaction); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
+		s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
 	} else {
-		s.sendJsonResponse(w, http.StatusOK, dto.SaveTransactionResponse{Status: status})
+		s.sendJsonResponse(r.Context(), w, http.StatusOK, dto.SaveTransactionResponse{Status: status})
 	}
 }
 
@@ -196,7 +196,7 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 
 	if pages, ok := queryParams["page"]; ok {
 		if i, err := strconv.Atoi(pages[0]); err != nil {
-			s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "parameter page should be integer"})
+			s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: "parameter page should be integer"})
 			return
 		} else {
 			requestDto.Page = &i
@@ -205,7 +205,7 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 
 	if itemsPerPageArr, ok := queryParams["itemsPerPage"]; ok {
 		if i, err := strconv.Atoi(itemsPerPageArr[0]); err != nil {
-			s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "parameter itemsPerPage should be integer"})
+			s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: "parameter itemsPerPage should be integer"})
 			return
 		} else {
 			requestDto.ItemsPerPage = &i
@@ -220,9 +220,9 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 		requestDto.SortType = &sortTypeArr[0]
 	}
 
-	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), requestDto); err != nil {
+	if ok, validationMessage, err := s.isValidRequest(r.Context(), s.validator, requestDto); err != nil {
 		if errors.Is(err, s.InternalServerError) {
-			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+			s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
 		} else {
 			s.log.WithFields(logrus.Fields{
 				"error_message": err.Error(),
@@ -232,7 +232,7 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 		return
 	} else {
 		if !ok {
-			s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: validationMessage})
+			s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: validationMessage})
 			return
 		}
 	}
@@ -261,7 +261,7 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 	}
 
 	if transactions, err := s.transactionService.GetTransactions(r.Context(), request); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
+		s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
 	} else {
 		var response dto.GetTransactionsResponse
 
@@ -278,7 +278,7 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 			})
 		}
 
-		s.sendJsonResponse(w, http.StatusOK, response)
+		s.sendJsonResponse(r.Context(), w, http.StatusOK, response)
 	}
 }
 
@@ -286,13 +286,13 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 	var request dto.CreateReportRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: "invalid request body"})
+		s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: "invalid request body"})
 		return
 	}
 
-	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
+	if ok, validationMessage, err := s.isValidRequest(r.Context(), s.validator, request); err != nil {
 		if errors.Is(err, s.InternalServerError) {
-			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+			s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
 		} else {
 			s.log.WithFields(logrus.Fields{
 				"error_message": err.Error(),
@@ -302,7 +302,7 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 		return
 	} else {
 		if !ok {
-			s.sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: validationMessage})
+			s.sendJsonResponse(r.Context(), w, http.StatusBadRequest, dto.ApiError{Message: validationMessage})
 			return
 		}
 	}
@@ -310,15 +310,15 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 	t := time.Date(*request.Year, time.Month(*request.Month), 0, 0, 0, 0, 0, time.UTC)
 
 	if err := s.reportService.CreateReport(r.Context(), t); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
+		s.sendJsonResponse(r.Context(), w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
 	} else {
-		s.sendJsonResponse(w, http.StatusOK, dto.CreateReportResponse{
+		s.sendJsonResponse(r.Context(), w, http.StatusOK, dto.CreateReportResponse{
 			URL: fmt.Sprintf("%s/%s.csv", "http://localhost:8000/report", r.Context().Value("requestId")),
 		})
 	}
 }
 
-func (s *httpServer) isValidRequest(v *validator.Validate, requestId string, requestBody any) (bool, string, error) {
+func (s *httpServer) isValidRequest(ctx context.Context, v *validator.Validate, requestBody any) (bool, string, error) {
 	ok := true
 	var validationMessage string
 
@@ -332,7 +332,7 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestId string, req
 				default:
 					s.log.WithFields(logrus.Fields{
 						"error_message": fmt.Sprintf("unexpected field type when validating required tag: %s", err.Type()),
-					}).Error(fmt.Sprintf("%s_ERROR", requestId))
+					}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 					return false, "", s.InternalServerError
 				}
@@ -343,7 +343,7 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestId string, req
 				default:
 					s.log.WithFields(logrus.Fields{
 						"error_message": fmt.Sprintf("unexpected field type when validating gt tag: %s", err.Type()),
-					}).Error(fmt.Sprintf("%s_ERROR", requestId))
+					}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 					return false, "", s.InternalServerError
 				}
@@ -358,7 +358,7 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestId string, req
 				default:
 					s.log.WithFields(logrus.Fields{
 						"error_message": fmt.Sprintf("unexpected field type when validating min tag: %s", err.Type()),
-					}).Error(fmt.Sprintf("%s_ERROR", requestId))
+					}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 					return false, "", s.InternalServerError
 				}
@@ -369,14 +369,14 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestId string, req
 				default:
 					s.log.WithFields(logrus.Fields{
 						"error_message": fmt.Sprintf("unexpected field type when validating max tag: %s", err.Type()),
-					}).Error(fmt.Sprintf("%s_ERROR", requestId))
+					}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 					return false, "", s.InternalServerError
 				}
 			default:
 				s.log.WithFields(logrus.Fields{
 					"error_message": fmt.Sprintf("unexpected validation tag: %s", err.Tag()),
-				}).Error(fmt.Sprintf("%s_ERROR", requestId))
+				}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 				return false, "", s.InternalServerError
 			}
@@ -389,16 +389,20 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestId string, req
 	return ok, validationMessage, nil
 }
 
-func (s *httpServer) sendJsonResponse(w http.ResponseWriter, status int, v interface{}) {
+func (s *httpServer) sendJsonResponse(ctx context.Context, w http.ResponseWriter, status int, v interface{}) {
 	w.WriteHeader(status)
 
 	response, err := json.Marshal(v)
 	if err != nil {
+		s.log.WithFields(logrus.Fields{
+			"error_message": err.Error(),
+		}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := w.Write(response); err != nil {
-		logger.GetLogger().Error(err.Error())
+		s.log.Fatal(err.Error())
 	}
 }
