@@ -29,7 +29,7 @@ func (r *ReportService) CreateReport(ctx context.Context, dateFrom time.Time) er
 	if err != nil {
 		r.log.WithFields(logrus.Fields{
 			"error_message": err.Error(),
-		}).Error(fmt.Sprintf("ERROR_%s", ctx.Value("requestId")))
+		}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 		return err
 	}
@@ -39,7 +39,7 @@ func (r *ReportService) CreateReport(ctx context.Context, dateFrom time.Time) er
 	if err != nil {
 		r.log.WithFields(logrus.Fields{
 			"error_message": err.Error(),
-		}).Error(fmt.Sprintf("ERROR_%s", ctx.Value("requestId")))
+		}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 		return err
 	}

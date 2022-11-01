@@ -73,7 +73,7 @@ func (s *httpServer) HandleIncreaseBalance(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if ok, validationMessage, err := s.isValidRequest(s.validator, request); err != nil {
+	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
 		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
 		return
 	} else {
@@ -145,7 +145,7 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ok, validationMessage, err := s.isValidRequest(s.validator, request); err != nil {
+	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
 		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
 		return
 	} else {
@@ -206,7 +206,7 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 		requestDto.SortType = &sortTypeArr[0]
 	}
 
-	if ok, validationMessage, err := s.isValidRequest(s.validator, requestDto); err != nil {
+	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), requestDto); err != nil {
 		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
 		return
 	} else {
@@ -269,7 +269,7 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if ok, validationMessage, err := s.isValidRequest(s.validator, request); err != nil {
+	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
 		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
 		return
 	} else {
@@ -290,7 +290,7 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (s *httpServer) isValidRequest(v *validator.Validate, requestBody interface{}) (bool, string, error) {
+func (s *httpServer) isValidRequest(v *validator.Validate, requestId string, requestBody any) (bool, string, error) {
 	ok := true
 	var validationMessage string
 
@@ -302,7 +302,9 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestBody interface
 				case reflect.Pointer:
 					validationMessage = fmt.Sprintf("field %s missing", err.Field())
 				default:
-					logrus.Error(fmt.Sprintf("unexpected field type when validating required tag: %s", err.Type()))
+					s.log.WithFields(logrus.Fields{
+						"error_message": fmt.Sprintf("unexpected field type when validating required tag: %s", err.Type()),
+					}).Error(fmt.Sprintf("%s_ERROR", requestId))
 
 					return false, "", s.InternalServerError
 				}
@@ -311,7 +313,9 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestBody interface
 				case reflect.Float64:
 					validationMessage = fmt.Sprintf("field %s should be > %s", err.Field(), err.Param())
 				default:
-					logrus.Error(fmt.Sprintf("unexpected field type when validating gt tag: %s", err.Type()))
+					s.log.WithFields(logrus.Fields{
+						"error_message": fmt.Sprintf("unexpected field type when validating gt tag: %s", err.Type()),
+					}).Error(fmt.Sprintf("%s_ERROR", requestId))
 
 					return false, "", s.InternalServerError
 				}
@@ -324,7 +328,9 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestBody interface
 				case reflect.Int:
 					validationMessage = fmt.Sprintf("field %s should be >= %s", err.Field(), err.Param())
 				default:
-					logrus.Error(fmt.Sprintf("unexpected field type when validating min tag: %s", err.Type()))
+					s.log.WithFields(logrus.Fields{
+						"error_message": fmt.Sprintf("unexpected field type when validating min tag: %s", err.Type()),
+					}).Error(fmt.Sprintf("%s_ERROR", requestId))
 
 					return false, "", s.InternalServerError
 				}
@@ -333,12 +339,16 @@ func (s *httpServer) isValidRequest(v *validator.Validate, requestBody interface
 				case reflect.Int:
 					validationMessage = fmt.Sprintf("field %s should be <= %s", err.Field(), err.Param())
 				default:
-					logrus.Error(fmt.Sprintf("unexpected field type when validating max tag: %s", err.Type()))
+					s.log.WithFields(logrus.Fields{
+						"error_message": fmt.Sprintf("unexpected field type when validating max tag: %s", err.Type()),
+					}).Error(fmt.Sprintf("%s_ERROR", requestId))
 
 					return false, "", s.InternalServerError
 				}
 			default:
-				logrus.Error(fmt.Sprintf("unexpected validation tag: %s", err.Tag()))
+				s.log.WithFields(logrus.Fields{
+					"error_message": fmt.Sprintf("unexpected validation tag: %s", err.Tag()),
+				}).Error(fmt.Sprintf("%s_ERROR", requestId))
 
 				return false, "", s.InternalServerError
 			}

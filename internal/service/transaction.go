@@ -28,7 +28,7 @@ func (t *TransactionService) SaveTransaction(ctx context.Context, transaction mo
 	if err != nil {
 		t.log.WithFields(logrus.Fields{
 			"error_message": err.Error(),
-		}).Error(fmt.Sprintf("ERROR_%s", ctx.Value("requestId")))
+		}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 		return 0, err
 	}
@@ -42,7 +42,7 @@ func (t *TransactionService) GetTransactions(ctx context.Context, request model.
 	if err != nil {
 		t.log.WithFields(logrus.Fields{
 			"error_message": err.Error(),
-		}).Error(fmt.Sprintf("ERROR_%s", ctx.Value("requestId")))
+		}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 		return nil, err
 	}

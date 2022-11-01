@@ -31,7 +31,7 @@ func (b *BalanceService) AddBalance(ctx context.Context, transaction model.Incre
 	if err := b.repo.AddBalance(transaction.UserId, transaction.Sum, transaction.Comment); err != nil {
 		b.log.WithFields(logrus.Fields{
 			"error_message": err.Error(),
-		}).Error(fmt.Sprintf("ERROR_%s", ctx.Value("requestId")))
+		}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 		return err
 	}
@@ -45,7 +45,7 @@ func (b *BalanceService) GetBalanceByUserID(ctx context.Context, userId string) 
 	if err != nil {
 		b.log.WithFields(logrus.Fields{
 			"error_message": err.Error(),
-		}).Error(fmt.Sprintf("ERROR_%s", ctx.Value("requestId")))
+		}).Error(fmt.Sprintf("%s_ERROR", ctx.Value("requestId")))
 
 		return 0, err
 	}
