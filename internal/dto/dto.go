@@ -32,11 +32,11 @@ type SaveTransactionResponse struct {
 } //@name SaveTransactionResponse
 
 type GetTransactionsRequest struct {
-	UserId       *string `validate:"required,uuid_rfc4122"`
-	Page         *int    `validate:"required,min=1"`
-	ItemsPerPage *int    `validate:"omitempty,min=1"`
-	SortBy       *string `validate:"omitempty,oneof=sum date"`
-	SortType     *string `validate:"omitempty,oneof=asc desc"`
+	UserId       *string `json:"userId" validate:"required,uuid_rfc4122"`
+	Page         *int    `json:"page" validate:"required,min=1"`
+	ItemsPerPage *int    `json:"itemsPerPage" validate:"omitempty,min=1"`
+	SortBy       *string `json:"sortBy" validate:"omitempty,oneof=sum date"`
+	SortType     *string `json:"sortType" validate:"omitempty,oneof=asc desc"`
 }
 
 type GetTransactionsResponse struct {
@@ -44,14 +44,14 @@ type GetTransactionsResponse struct {
 }
 
 type Transaction struct {
-	UserId            *string   `json:"user_id,omitempty"`
-	OrderId           *string   `json:"order_id,omitempty"`
-	ServiceId         *string   `json:"service_id,omitempty"`
-	Sum               float64   `json:"sum"`
-	TransactionTypeId *int      `json:"transaction_type_id,omitempty"`
-	TransactionType   string    `json:"transaction_type"`
-	Comment           *string   `json:"comment,omitempty"`
-	UpdTime           time.Time `json:"date"`
+	UserId            *string   `json:"user_id,omitempty" swaggerignore:"true"`
+	OrderId           *string   `json:"order_id,omitempty" example:"6c87959d-aa88-4f51-932b-ff70563ad87b"`
+	ServiceId         *string   `json:"service_id,omitempty" example:"15aa9f91-c8f7-40e4-9108-d45891c10444"`
+	Sum               float64   `json:"sum" example:"1000"`
+	TransactionTypeId *int      `json:"transaction_type_id,omitempty" swaggerignore:"true"`
+	TransactionType   string    `json:"transaction_type" example:"Резервация подтверждена, средства списаны, оплата прошла"`
+	Comment           *string   `json:"comment,omitempty" example:"оплата подтверждена"`
+	UpdTime           time.Time `json:"date" example:"2022-11-01T16:37:52.717392Z"`
 }
 
 type CreateReportRequest struct {

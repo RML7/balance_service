@@ -185,6 +185,19 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HandleGetTransactions
+// @summary Получение списка транзакций пользователя
+// @tags transaction
+// @description Метод получение списка транзакций пользователя
+// @accept json
+// @produce json
+// @param userId query string true "id пользователя" Format(uuid) example(b2b9a788-55fb-11ed-bdc3-0242ac120002)
+// @param page query integer true "номер страницы" example(1) minimum(1)
+// @param itemsPerPage query integer false "количество записей на странице" example(1) minimum(1) default(10)
+// @param sortBy query string false "поле по которому надо сортировать" example(sum) default(date) enums(date, sum)
+// @param sortType query string false "тип сортировки" example(asc) default(desc) enums(asc, desc)
+// @success 200 {object} dto.GetTransactionsResponse
+// @router /transaction [get]
 func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 	var requestDto dto.GetTransactionsRequest
 
