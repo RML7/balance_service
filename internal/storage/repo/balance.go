@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/avito-test/internal/storage/db"
 	"github.com/jackc/pgx/v4"
@@ -22,7 +21,6 @@ func (r *BalanceRepo) AddBalance(userId string, sum float64, comment *string) er
 
 	_, err := r.dbClient.Exec(context.TODO(), sql, userId, sum, comment)
 	if err != nil {
-		log.Println(err.Error())
 		return err
 	}
 
