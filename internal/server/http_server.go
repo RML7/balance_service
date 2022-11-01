@@ -295,6 +295,15 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// HandleCreateReport
+// @summary Создание отчета для бухгалтерии
+// @tags report
+// @description Метод создание отчета для бухгалтерии. Возвращает ссылку на файл
+// @accept json
+// @produce json
+// @param CreateReportRequest body dto.CreateReportRequest true "year - год отчета (2022 <=year <= 2100)<br>month - месяц отчета"
+// @success 200 {object} dto.CreateReportResponse
+// @router /report [post]
 func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) {
 	var request dto.CreateReportRequest
 

@@ -41,7 +41,7 @@ type GetTransactionsRequest struct {
 
 type GetTransactionsResponse struct {
 	Transactions []Transaction `json:"transactions"`
-}
+} //@name GetTransactionsResponse
 
 type Transaction struct {
 	UserId            *string   `json:"user_id,omitempty" swaggerignore:"true"`
@@ -52,13 +52,13 @@ type Transaction struct {
 	TransactionType   string    `json:"transaction_type" example:"Резервация подтверждена, средства списаны, оплата прошла"`
 	Comment           *string   `json:"comment,omitempty" example:"оплата подтверждена"`
 	UpdTime           time.Time `json:"date" example:"2022-11-01T16:37:52.717392Z"`
-}
+} //@name Transaction
 
 type CreateReportRequest struct {
-	Year  *int `validate:"required,min=2022,max=2100"`
-	Month *int `validate:"required,oneof=1 2 3 4 5 6 7 8 9 10 11 12"`
-}
+	Year  *int `json:"year" validate:"required,min=2022,max=2100" minimum:"2022" maximum:"2100"`
+	Month *int `json:"month" validate:"required,oneof=1 2 3 4 5 6 7 8 9 10 11 12" enums:"1,2,3,4,5,6,7,8,9,10,11,12"`
+} //@name CreateReportRequest
 
 type CreateReportResponse struct {
-	URL string `json:"url"`
-}
+	URL string `json:"url" example:"http://localhost:8000/report/03070038-3459-45d8-ad22-a8fc0fbb634c.csv"`
+} //@name CreateReportResponse
