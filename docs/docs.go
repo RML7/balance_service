@@ -99,7 +99,135 @@ const docTemplate = `{
                 }
             }
         },
+        "/report": {
+            "post": {
+                "description": "Метод создание отчета для бухгалтерии. Возвращает ссылку на файл",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "report"
+                ],
+                "summary": "Создание отчета для бухгалтерии",
+                "parameters": [
+                    {
+                        "description": "year - год отчета (2022 \u003c=year \u003c= 2100)\u003cbr\u003emonth - месяц отчета",
+                        "name": "CreateReportRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/CreateReportResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/report/{fileName}": {
+            "get": {
+                "description": "Метод получения файла по ссылке",
+                "tags": [
+                    "report"
+                ],
+                "summary": "Получения файла по ссылке",
+                "responses": {
+                    "200": {
+                        "description": "Возвращает содержимое файла. 1 колонка - id услуги (так как названия услуги в моем сервисе не предусмотрено, а доступа к другим нет, так как это просто тест), 2 колонка - общая сумма выручки за услугу",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Если файл не найден"
+                    }
+                }
+            }
+        },
         "/transaction": {
+            "get": {
+                "description": "Метод получение списка транзакций пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Получение списка транзакций пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "b2b9a788-55fb-11ed-bdc3-0242ac120002",
+                        "description": "id пользователя",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "example": 1,
+                        "description": "номер страницы",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "example": 1,
+                        "description": "количество записей на странице",
+                        "name": "itemsPerPage",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "date",
+                            "sum"
+                        ],
+                        "type": "string",
+                        "default": "date",
+                        "example": "sum",
+                        "description": "поле по которому надо сортировать",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "example": "asc",
+                        "description": "тип сортировки",
+                        "name": "sortType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/GetTransactionsResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Метод для обработки транзакции. Для резервации денег со счета в теле запроса поле \"transactionType\" = 1. Для признания выручки и подтверждения списания средств с баланса \"transactionType\" = 2. В случае отмены резервации и возврата средств на основной баланс \"transactionType\" = 3.",
                 "consumes": [
@@ -143,6 +271,46 @@ const docTemplate = `{
                 }
             }
         },
+        "CreateReportRequest": {
+            "type": "object",
+            "required": [
+                "month",
+                "year"
+            ],
+            "properties": {
+                "month": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12
+                    ]
+                },
+                "year": {
+                    "type": "integer",
+                    "maximum": 2100,
+                    "minimum": 2022
+                }
+            }
+        },
+        "CreateReportResponse": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "example": "http://localhost:8000/report/03070038-3459-45d8-ad22-a8fc0fbb634c.csv"
+                }
+            }
+        },
         "GetBalanceResponse": {
             "type": "object",
             "properties": {
@@ -150,6 +318,17 @@ const docTemplate = `{
                     "type": "number",
                     "format": "numeric",
                     "example": 53.68
+                }
+            }
+        },
+        "GetTransactionsResponse": {
+            "type": "object",
+            "properties": {
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Transaction"
+                    }
                 }
             }
         },
@@ -230,6 +409,35 @@ const docTemplate = `{
                 "status": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "Transaction": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string",
+                    "example": "оплата подтверждена"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2022-11-01T16:37:52.717392Z"
+                },
+                "order_id": {
+                    "type": "string",
+                    "example": "6c87959d-aa88-4f51-932b-ff70563ad87b"
+                },
+                "service_id": {
+                    "type": "string",
+                    "example": "15aa9f91-c8f7-40e4-9108-d45891c10444"
+                },
+                "sum": {
+                    "type": "number",
+                    "example": 1000
+                },
+                "transaction_type": {
+                    "type": "string",
+                    "example": "Резервация подтверждена, средства списаны, оплата прошла"
                 }
             }
         }

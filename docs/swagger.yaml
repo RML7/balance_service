@@ -4,6 +4,37 @@ definitions:
       message:
         type: string
     type: object
+  CreateReportRequest:
+    properties:
+      month:
+        enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        type: integer
+      year:
+        maximum: 2100
+        minimum: 2022
+        type: integer
+    required:
+    - month
+    - year
+    type: object
+  CreateReportResponse:
+    properties:
+      url:
+        example: http://localhost:8000/report/03070038-3459-45d8-ad22-a8fc0fbb634c.csv
+        type: string
+    type: object
   GetBalanceResponse:
     properties:
       balance:
@@ -11,12 +42,18 @@ definitions:
         format: numeric
         type: number
     type: object
+  GetTransactionsResponse:
+    properties:
+      transactions:
+        items:
+          $ref: '#/definitions/Transaction'
+        type: array
+    type: object
   IncreaseBalanceRequest:
     properties:
       comment:
         example: Зачисление денежных средств на баланс
         format: string
-        minLength: 1
         type: string
       sum:
         example: 53.68
@@ -32,6 +69,10 @@ definitions:
     type: object
   SaveTransactionRequest:
     properties:
+      comment:
+        example: Резервация денежных средств
+        format: string
+        type: string
       orderId:
         example: 6c87959d-aa88-4f51-932b-ff70563ad87a
         format: uuid
@@ -68,6 +109,27 @@ definitions:
       status:
         example: 1
         type: integer
+    type: object
+  Transaction:
+    properties:
+      comment:
+        example: оплата подтверждена
+        type: string
+      date:
+        example: "2022-11-01T16:37:52.717392Z"
+        type: string
+      order_id:
+        example: 6c87959d-aa88-4f51-932b-ff70563ad87b
+        type: string
+      service_id:
+        example: 15aa9f91-c8f7-40e4-9108-d45891c10444
+        type: string
+      sum:
+        example: 1000
+        type: number
+      transaction_type:
+        example: Резервация подтверждена, средства списаны, оплата прошла
+        type: string
     type: object
 host: localhost:8000
 info:
@@ -133,7 +195,98 @@ paths:
       summary: получение баланса по userId
       tags:
       - balance
+  /report:
+    post:
+      consumes:
+      - application/json
+      description: Метод создание отчета для бухгалтерии. Возвращает ссылку на файл
+      parameters:
+      - description: year - год отчета (2022 <=year <= 2100)<br>month - месяц отчета
+        in: body
+        name: CreateReportRequest
+        required: true
+        schema:
+          $ref: '#/definitions/CreateReportRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CreateReportResponse'
+      summary: Создание отчета для бухгалтерии
+      tags:
+      - report
+  /report/{fileName}:
+    get:
+      description: Метод получения файла по ссылке
+      responses:
+        "200":
+          description: Возвращает содержимое файла. 1 колонка - id услуги (так как
+            названия услуги в моем сервисе не предусмотрено, а доступа к другим нет,
+            так как это просто тест), 2 колонка - общая сумма выручки за услугу
+          schema:
+            type: string
+        "404":
+          description: Если файл не найден
+      summary: Получения файла по ссылке
+      tags:
+      - report
   /transaction:
+    get:
+      consumes:
+      - application/json
+      description: Метод получение списка транзакций пользователя
+      parameters:
+      - description: id пользователя
+        example: b2b9a788-55fb-11ed-bdc3-0242ac120002
+        format: uuid
+        in: query
+        name: userId
+        required: true
+        type: string
+      - description: номер страницы
+        example: 1
+        in: query
+        minimum: 1
+        name: page
+        required: true
+        type: integer
+      - default: 10
+        description: количество записей на странице
+        example: 1
+        in: query
+        minimum: 1
+        name: itemsPerPage
+        type: integer
+      - default: date
+        description: поле по которому надо сортировать
+        enum:
+        - date
+        - sum
+        example: sum
+        in: query
+        name: sortBy
+        type: string
+      - default: desc
+        description: тип сортировки
+        enum:
+        - asc
+        - desc
+        example: asc
+        in: query
+        name: sortType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GetTransactionsResponse'
+      summary: Получение списка транзакций пользователя
+      tags:
+      - transaction
     post:
       consumes:
       - application/json
@@ -144,7 +297,8 @@ paths:
       parameters:
       - description: orderId - id заказа (UUID).<br> serviceId - id услуги (UUID).<br>
           userId - id пользователя (UUID).<br> sum - сумма транзакции (больше 0).<br>
-          transactionType - тип транзакции (enum(1, 2, 3)).
+          transactionType - тип транзакции (enum(1, 2, 3)).<br> comment - комментарий
+          (опционально)
         in: body
         name: SaveTransactionRequest
         required: true
