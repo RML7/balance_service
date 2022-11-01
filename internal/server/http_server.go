@@ -74,7 +74,14 @@ func (s *httpServer) HandleIncreaseBalance(w http.ResponseWriter, r *http.Reques
 	}
 
 	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+		if errors.Is(err, s.InternalServerError) {
+			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+		} else {
+			s.log.WithFields(logrus.Fields{
+				"error_message": err.Error(),
+			}).Error(fmt.Sprintf("%s_ERROR", r.Context().Value("requestId")))
+		}
+
 		return
 	} else {
 		if !ok {
@@ -146,7 +153,14 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+		if errors.Is(err, s.InternalServerError) {
+			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+		} else {
+			s.log.WithFields(logrus.Fields{
+				"error_message": err.Error(),
+			}).Error(fmt.Sprintf("%s_ERROR", r.Context().Value("requestId")))
+		}
+
 		return
 	} else {
 		if !ok {
@@ -207,7 +221,14 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 	}
 
 	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), requestDto); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+		if errors.Is(err, s.InternalServerError) {
+			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+		} else {
+			s.log.WithFields(logrus.Fields{
+				"error_message": err.Error(),
+			}).Error(fmt.Sprintf("%s_ERROR", r.Context().Value("requestId")))
+		}
+
 		return
 	} else {
 		if !ok {
@@ -270,7 +291,14 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if ok, validationMessage, err := s.isValidRequest(s.validator, fmt.Sprintf("%s", r.Context().Value("requestId")), request); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+		if errors.Is(err, s.InternalServerError) {
+			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: err.Error()})
+		} else {
+			s.log.WithFields(logrus.Fields{
+				"error_message": err.Error(),
+			}).Error(fmt.Sprintf("%s_ERROR", r.Context().Value("requestId")))
+		}
+
 		return
 	} else {
 		if !ok {
