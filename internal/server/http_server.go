@@ -97,7 +97,7 @@ func (s *httpServer) HandleIncreaseBalance(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := s.balanceService.AddBalance(r.Context(), transaction); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
+		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
 	}
 }
 
@@ -126,7 +126,7 @@ func (s *httpServer) HandleGetBalance(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, s.balanceService.BalanceNotFoundErr) {
 			s.sendJsonResponse(w, http.StatusNotFound, dto.ApiError{Message: err.Error()})
 		} else {
-			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
+			s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
 		}
 
 		return
@@ -179,7 +179,7 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if status, err := s.transactionService.SaveTransaction(r.Context(), transaction); err != nil {
-		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: "internal server error"})
+		s.sendJsonResponse(w, http.StatusInternalServerError, dto.ApiError{Message: s.InternalServerError.Error()})
 	} else {
 		s.sendJsonResponse(w, http.StatusOK, dto.SaveTransactionResponse{Status: status})
 	}
