@@ -20,20 +20,20 @@ import (
 // @host localhost:8000
 func main() {
 	router := mux.NewRouter()
-	router.Use(middleware.ResponseHeaders, middleware.RequestID, middleware.Logging)
+	router.Use(middleware.ResponseHeaders)
 
 	httpServer := server.NewHttpServer()
 
-	router.HandleFunc("/balance/{userId}", httpServer.HandleGetBalance).Methods(http.MethodGet)
-	router.HandleFunc("/balance", httpServer.HandleIncreaseBalance).Methods(http.MethodPost)
+	router.Handle("/balance/{userId}", middleware.RequestID(middleware.Logging(http.HandlerFunc(httpServer.HandleGetBalance)))).Methods(http.MethodGet)
+	router.Handle("/balance", middleware.RequestID(middleware.Logging(http.HandlerFunc(httpServer.HandleIncreaseBalance)))).Methods(http.MethodPost)
 
-	router.HandleFunc("/transaction", httpServer.HandleGetTransactions).Methods(http.MethodGet)
-	router.HandleFunc("/transaction", httpServer.HandleTransaction).Methods(http.MethodPost)
+	router.Handle("/transaction", middleware.RequestID(middleware.Logging(http.HandlerFunc(httpServer.HandleGetTransactions)))).Methods(http.MethodGet)
+	router.Handle("/transaction", middleware.RequestID(middleware.Logging(http.HandlerFunc(httpServer.HandleTransaction)))).Methods(http.MethodPost)
 
-	router.HandleFunc("/report", httpServer.HandleCreateReport).Methods(http.MethodPost)
+	router.Handle("/report", middleware.RequestID(middleware.Logging(http.HandlerFunc(httpServer.HandleCreateReport)))).Methods(http.MethodPost)
+	router.PathPrefix("/report/").Handler(middleware.RequestID(middleware.Logging(http.StripPrefix("/report/", http.FileServer(http.Dir(fmt.Sprintf("static%sfile", string(os.PathSeparator))))))))
 
 	router.PathPrefix("/swagger").Handler(swagger.WrapHandler).Methods(http.MethodGet)
-	router.PathPrefix("/report/").Handler(http.StripPrefix("/report/", http.FileServer(http.Dir(fmt.Sprintf("static%sfile", string(os.PathSeparator))))))
 
 	if err := http.ListenAndServe(":8000", router); err != nil {
 		log.Fatal(err.Error())
