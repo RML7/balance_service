@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/avito-test/internal/config/logger"
+	valid "github.com/avito-test/internal/config/validator"
 	"github.com/avito-test/internal/dto"
 	"github.com/avito-test/internal/model"
 	"github.com/avito-test/internal/service"
@@ -42,7 +43,7 @@ func NewHttpServer() *httpServer {
 	reportRepo := repo.NewReportRepo(dbClient)
 
 	return &httpServer{
-		validator:          validator.New(),
+		validator:          valid.GetValidator(),
 		log:                log,
 		balanceService:     service.NewBalanceService(balanceRepo),
 		transactionService: service.NewTransactionService(transactionRepo),
@@ -68,9 +69,9 @@ func (s *httpServer) HandleIncreaseBalance(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	valid, errorMessage := isValidRequest(s.validator, request)
+	ok, errorMessage := isValidRequest(s.validator, request)
 
-	if !valid {
+	if !ok {
 		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: errorMessage})
 		return
 	}
@@ -137,9 +138,9 @@ func (s *httpServer) HandleTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	valid, errorMessage := isValidRequest(s.validator, request)
+	ok, errorMessage := isValidRequest(s.validator, request)
 
-	if !valid {
+	if !ok {
 		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: errorMessage})
 		return
 	}
@@ -195,9 +196,9 @@ func (s *httpServer) HandleGetTransactions(w http.ResponseWriter, r *http.Reques
 		requestDto.SortType = &sortTypeArr[0]
 	}
 
-	valid, errorMessage := isValidRequest(s.validator, requestDto)
+	ok, errorMessage := isValidRequest(s.validator, requestDto)
 
-	if !valid {
+	if !ok {
 		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: errorMessage})
 		return
 	}
@@ -255,9 +256,9 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	valid, errorMessage := isValidRequest(s.validator, request)
+	ok, errorMessage := isValidRequest(s.validator, request)
 
-	if !valid {
+	if !ok {
 		sendJsonResponse(w, http.StatusBadRequest, dto.ApiError{Message: errorMessage})
 		return
 	}
@@ -274,7 +275,7 @@ func (s *httpServer) HandleCreateReport(w http.ResponseWriter, r *http.Request) 
 }
 
 func isValidRequest(v *validator.Validate, requestBody interface{}) (bool, string) {
-	valid := true
+	ok := true
 	var errorMessage string
 
 	if err := v.Struct(requestBody); err != nil {
@@ -311,12 +312,12 @@ func isValidRequest(v *validator.Validate, requestBody interface{}) (bool, strin
 				errorMessage = "internal server error"
 			}
 
-			valid = false
+			ok = false
 			break
 		}
 	}
 
-	return valid, errorMessage
+	return ok, errorMessage
 }
 
 func sendJsonResponse(w http.ResponseWriter, status int, v interface{}) {
