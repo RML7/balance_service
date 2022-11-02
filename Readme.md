@@ -16,3 +16,7 @@ http://localhost:8000/swagger/index.html
 ```
 
 ![img.png](resource/image/img.png)
+
+### Используемые сторонние библиотеки:
+1. [gorilla/mux](https://github.com/gorilla/mux) - http - роутер
+2. [logrus](https://github.com/sirupsen/logrus) - логирование
