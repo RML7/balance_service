@@ -17,6 +17,9 @@ http://localhost:8000/swagger/index.html
 
 ![img.png](resource/image/img.png)
 
-### Используемые сторонние библиотеки:
+### Используемые сторонние библиотеки
 1. [gorilla/mux](https://github.com/gorilla/mux) - http - роутер
 2. [logrus](https://github.com/sirupsen/logrus) - логирование
+3. [swaggo/swag](https://github.com/swaggo/swag) - генерация swagger через аннотации
+4. [go-playground/validator](https://github.com/go-playground/validator) - валидация
+5. [jackc/pgx](https://github.com/jackc/pgx) - работа с бд
