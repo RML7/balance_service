@@ -74,13 +74,14 @@ DECLARE
     service_id_o uuid;
     sum_o numeric;
     transaction_type_id_o smallint;
+    comment_o varchar;
     upd_time_o timestamp;
 
     user_id_balance uuid;
     current_balance numeric;
 begin
-    SELECT id, order_id, user_id, service_id, sum, transaction_type_id, upd_time
-    INTO id_o, order_id_o, user_id_o, service_id_o, sum_o, transaction_type_id_o, upd_time_o
+    SELECT id, order_id, user_id, service_id, sum, transaction_type_id, comment, upd_time
+    INTO id_o, order_id_o, user_id_o, service_id_o, sum_o, transaction_type_id_o, comment_o, upd_time_o
     FROM public.transaction
     WHERE order_id = order_id_i AND user_id = user_id_i AND service_id = service_id_i;
 
@@ -134,7 +135,7 @@ begin
         WHERE user_id = user_id_i;
     ELSE
         INSERT INTO public.transaction_upd(id, order_id, user_id, service_id, transaction_type_id, sum, comment, upd_time)
-        VALUES (id_o, order_id_o, user_id_o, service_id_o, transaction_type_id_o, sum_o, comment_i, upd_time_o);
+        VALUES (id_o, order_id_o, user_id_o, service_id_o, transaction_type_id_o, sum_o, comment_o, upd_time_o);
 
         UPDATE public.transaction SET
             transaction_type_id = transaction_type_id_i,
