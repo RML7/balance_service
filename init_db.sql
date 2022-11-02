@@ -28,8 +28,8 @@ create table public.transaction(
     upd_time            timestamp                      not null
 );
 
-create index transaction_order_id_user_id_service_id__index
-    on public.transaction (order_id, user_id, service_id);
+create unique index transaction_order_id_user_id_service_id__unique
+    on transaction (order_id, user_id, service_id);
 
 create table public.transaction_upd(
     upd_id              uuid default gen_random_uuid() not null
