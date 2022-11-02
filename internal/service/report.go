@@ -26,6 +26,12 @@ func NewReportService(repo repo.ReportRepo) *ReportService {
 func (r *ReportService) CreateReport(ctx context.Context, dateFrom time.Time) error {
 	rows, err := r.repo.GetReportRows(dateFrom)
 
+	err = os.MkdirAll(fmt.Sprintf("static%sfile", string(os.PathSeparator)), 0755)
+
+	if err != nil {
+		r.log.Fatal(err.Error())
+	}
+
 	if err != nil {
 		r.log.WithFields(logrus.Fields{
 			"error_message": err.Error(),
